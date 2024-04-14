@@ -37,8 +37,8 @@ Resources:
         Fn::Base64: |
           #!/bin/bash
           yum install aws-cli -y
-          aws configure set aws_access_key_id /*AKIA47CRYL7RDTFY7D5D*/
-          aws configure set aws_secret_access_key /*O9HYcp0eG3CG/ytZJDo725auLfAeeP1EidSBUFnJ*/
+          aws configure set aws_access_key_id ACCESS_KEY_ID
+          aws configure set aws_secret_access_key SECRET_ACCESS_KEY_ID
           aws configure set default.region us-east-1
 
           aws s3 mb s3://new-ec2-instance
