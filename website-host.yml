@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  Creating ec2 and security group with website hosting.
+  
+Resources:
+         
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup 
+    Properties:
+      GroupDescription: 'public ssh securitygroup' 
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0            
+      Tags:
+        - Key: Name
+          Value: public SSH for website
+
+  firstec2instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089
+      InstanceType: t2.micro
+      KeyName: public-key-1
+      SecurityGroupIds: 
+       - !Ref PublicSecurityGroup
+      UserData:
+        !Base64 |
+          #! /bin/bash
+          yum update -y
+          yum install httpd -y
+          systemctl start httpd
+          systemctl enable httpd
+          touch /var/www/html/index.html
+          echo "hello bro!!!😎" > /var/www/html/index.html
+          systemctl restart httpd

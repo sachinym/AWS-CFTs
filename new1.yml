@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This template will just deploys ec2 instance
+
+Resources:
+
+  SeciondEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089
+      InstanceType: t2.micro
+<<<<<<< HEAD
+      Tags:
+        - Key: Name
+          Value: Second aws machine
+=======
+      KeyPair: test-01
+      Tags:
+        - Key: Name
+          Value : Second aws machine
+>>>>>>> 93ad2d1e0a4f7198b5036061c76ea74665f07a9c

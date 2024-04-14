@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  Creating security group with conditions.
+  
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: public
+    AllowedValues:
+     - public
+     - private
+
+Conditions:
+  createpublic: !Equals [!Ref EnvironmentName, public]
+  createprivate: !Equals [!Ref EnvironmentName, private] 
+
+Resources:         
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: createpublic
+    Properties:
+      GroupDescription: 'public ssh securitygroup'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0  
+      Tags:
+        - Key: Name
+          Value: public SSH      
+
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: createprivate
+    Properties:
+      GroupDescription: 'private ssh securitygroup'
+      Condition: createprivate
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0  
+      Tags:
+        - Key: Name
+          Value: private SSH

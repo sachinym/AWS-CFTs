@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Creation of ec2 with vpc attached to it.
+Resources:
+
+  Ec2Vpc:               
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/20
+
+  Ec2InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  GatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref Ec2InternetGateway
+      VpcId: !Ref Ec2Vpc
+
+  Ec2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Ec2Vpc
+  
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-south-1a
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref Ec2Vpc
+      MapPublicIpOnLaunch: true      
+
+  RouteAndSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref Ec2RouteTable
+      SubnetId: !Ref PublicSubnet
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: ap-south-1a
+      ImageId: ami-09298640a92b2d12c
+      InstanceType: t2.micro
+      KeyName: !Ref Ec2key
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+
+  Ec2key:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: asia-south-2
+          
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'ssh securitygroup'
+      VpcId: !Ref Ec2Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0   
+
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref Ec2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Ec2InternetGateway   

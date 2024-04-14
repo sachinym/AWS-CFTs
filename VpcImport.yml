@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Creation of ec2 with vpc resources imported to it.
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089
+      InstanceType: t2.micro
+      KeyName: test-01
+      SubnetId: !ImportValue subnetexport007 
+      SecurityGroupIds:
+       - !ImportValue sshgroupexport007

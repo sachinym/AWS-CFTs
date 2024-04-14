@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  Creating ec2 and security group new user and password.
+
+Parameters:
+  Username:
+    Type: String
+    Description: Username for the new user
+  Password:
+    Type: String
+    Description: Password for the new user
+
+Resources:
+         
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup 
+    Properties:
+      GroupDescription: 'enable tcp, http and https access' 
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0            
+      Tags:
+        - Key: Name
+          Value: public SSH for website
+
+  firstec2instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+       - !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: Ec2-with-2-user 
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          systemctl restart sshd
+          useradd ${Username}
+          echo "${Username}:${Password}" | chpasswd 
+          echo "New user ${Username} created"
+
+Outputs:
+  InstanceId:
+    Description: 'Instanceid'
+    Value: !Ref firstec2instance

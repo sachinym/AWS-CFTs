@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  Creating Ec2 instance with conditions on instance type
+  
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+     - dev
+     - prod
+     - qa
+    
+Mappings:
+  SelectInstance:
+    dev:
+      Ec2ins: t2.micro
+    prod:
+      Ec2ins: t2.small
+    qa:
+      Ec2ins: t2.nano     
+
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089    
+      InstanceType: !FindInMap
+        - SelectInstance
+        - !Ref EnvironmentName
+        - Ec2ins
+      KeyName: test-01 
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+      Tags:
+        - Key: Name
+          Value: cool bro!!!😎         
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'ssh securitygroup'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  Instance:
+    Description: 'InstanceId'
+    Value: !Ref Ec2Instance
+
+  Instancetype:
+    Description: 'instance type'
+    Value: !GetAtt Ec2Instance.InstanceType    
