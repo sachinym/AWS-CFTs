@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This CFT contains parameters,mappings,metadata and resources.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+     - dev
+     - prod
+     - qa
+
+  Choosekey:
+    Type: String
+    AllowedValues:
+      - first
+      - second
+
+Mappings:
+  SelectInstance:
+    dev:
+      Ec2ins: t2.micro
+    prod:
+      Ec2ins: t2.small
+    qa:
+      Ec2ins: t2.nano   
+
+  Keyname:
+    first: 
+      select: public-key-1
+    second: 
+      select: test-01  
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: "EC2 configuration"
+      Parameters:
+        - EnvironmentName
+        - Choosekey
+
+    ParameterLabels:
+      EnvironmentName:
+        default: "choose the type of instance you want..."
+      Choosekey:
+        default: "choose the key for ec2 instance..."
+
+#Conditions:
+  
+Resources:
+
+  NewVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/20
+      Tags:
+        - Key: Name
+          Value: Practice VPC
+
+  Ec2InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Practice IGW
+  
+  GatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref Ec2InternetGateway
+      VpcId: !Ref NewVPC
+
+  Ec2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref NewVPC
+      Tags:
+        - Key: Name
+          Value: Practice RT
+
+  Gateandroute:
+    Type: AWS::EC2::Route
+    Properties:
+      GatewayId: !Ref Ec2InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref Ec2RouteTable
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref NewVPC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public subnet      
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 10.0.4.0/24
+      VpcId: !Ref NewVPC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: Private subnet      
+
+  RouteAndSubnet:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref Ec2RouteTable
+      SubnetId: !Ref PublicSubnet
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'ssh securitygroup'
+      VpcId: !Ref NewVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0    
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-051f8a213df8bc089    
+      InstanceType: !FindInMap
+        - SelectInstance
+        - !Ref EnvironmentName
+        - Ec2ins
+      KeyName: !FindInMap
+        - Keyname
+        - !Ref Choosekey
+        - select
+      SecurityGroupIds: 
+        - !Ref SSHSecurityGroup
+      SubnetId: !Ref PublicSubnet  
+      Tags:
+        - Key: Name
+          Value: successful

@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Creation of ec2 with vpc resources imported from s3 bucket.
+Resources:
+
+  VPCstack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL:  https://new-repo-0123.s3.amazonaws.com/nested-stack.yml
+  Ec2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-051f8a213df8bc089
+      InstanceType: t2.micro
+      KeyName: test-01
+      SubnetId: !GetAtt VPCstack.Outputs.Subnetid 
+      SecurityGroupIds:
+       - !GetAtt VPCstack.Outputs.Securitygroupid

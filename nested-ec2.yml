@@ -1,7 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: |
-  CloudFormation template to launch EC2 instances with security groups
+  CloudFormation template to launch EC2 instances with security groups and launches another cft
+
+Parameters:
+  AccessKey:
+    Type: String
+    Description: Provide Access key here
+
+  SecretAccessKey:
+    Type: String
+    Description: Provide Secret access key here  
 
 Resources:
 
@@ -34,14 +43,13 @@ Resources:
         - Key: Name
           Value: first aws machine 
       UserData:
-        Fn::Base64: |
-          #!/bin/bash
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
           yum install aws-cli -y
-          aws configure set aws_access_key_id ACCESS_KEY_ID
-          aws configure set aws_secret_access_key SECRET_ACCESS_KEY_ID
+          aws configure set aws_access_key_id ${AccessKey}
+          aws configure set aws_secret_access_key ${SecretAccessKey}
           aws configure set default.region us-east-1
 
-          aws s3 mb s3://new-ec2-instance
           aws s3 cp s3://temp-repository-1/new1.yml /tmp/new2.yml
 
           aws cloudformation create-stack --stack-name SecondEC2InstanceStack --template-body file:///tmp/new2.yml

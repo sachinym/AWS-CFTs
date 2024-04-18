@@ -1,15 +1,24 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: |
-  Creation of vpc and exporting
-Resources:
 
-  Ec2Vpc:               
+Description: |
+  This CFT contains resources and output of vpc 
+  which will be used to deploy linux and windows instance.
+
+Resources:
+  Ec2Vpc:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/20
+      Tags:
+        - Key: Name
+          Value: Final VPC      
 
   Ec2InternetGateway:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Final igw    
 
   GatewayAttach:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -21,49 +30,42 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref Ec2Vpc
-  
+      Tags:
+        - Key: Name
+          Value: Final RT
+
   PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: us-east-1a
       CidrBlock: 10.0.1.0/24
       VpcId: !Ref Ec2Vpc
-      MapPublicIpOnLaunch: true      
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Final public subnet      
 
   RouteAndSubnet:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref Ec2RouteTable
       SubnetId: !Ref PublicSubnet
-          
-  SSHSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: 'ssh securitygroup'
-      VpcId: !Ref Ec2Vpc
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0   
 
   InternetGatewayRoute:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref Ec2RouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref Ec2InternetGateway   
+      GatewayId: !Ref Ec2InternetGateway
 
 Outputs:
-
   Subnetid:
     Description: subnetid
     Value: !Ref PublicSubnet
-    Export:
-      Name: subnetexport007      
+  
+  Routetable:
+    Description: routetable
+    Value: !Ref Ec2RouteTable
 
-  Securitygroupid:
-    Description: securitygroupid
-    Value: !Ref SSHSecurityGroup
-    Export:
-      Name: sshgroupexport007        
+  Vpcid:
+    Description: vpcid
+    Value: !Ref Ec2Vpc    

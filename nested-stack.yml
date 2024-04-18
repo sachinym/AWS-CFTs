@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Creation of vpc and exporting
+  Creation of vpc and storing in s3 bucket
 Resources:
 
   Ec2Vpc:               
@@ -58,12 +58,8 @@ Outputs:
 
   Subnetid:
     Description: subnetid
-    Value: !Ref PublicSubnet
-    Export:
-      Name: subnetexport007      
+    Value: !Ref PublicSubnet      
 
   Securitygroupid:
     Description: securitygroupid
-    Value: !Ref SSHSecurityGroup
-    Export:
-      Name: sshgroupexport007        
+    Value: !Ref SSHSecurityGroup        

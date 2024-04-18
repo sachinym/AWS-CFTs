@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  This CFT contains parameters,mappings,metadata,conditions,resources and output.
+
+Parameters:
+
+  SelectAMI:
+    Type: String
+    Default: linux
+    AllowedValues:
+      - linux
+      - windows
+      - bothami
+    Description: Select the vm image for new user 
+
+  Username:
+    Type: String
+    Default: sampleuser
+    Description: Username for the new user
+
+  Password:
+    Type: String
+    Default: Zenon@123
+    Description: Password for the new user
+
+Mappings:
+  MachineType:
+    us-east-1:
+      linux: ami-051f8a213df8bc089
+      windows: ami-03cd80cfebcbb4481
+    us-east-2:
+      linux: ami-0900fe555666598a2
+      windows: ami-02db44a38cfb5d753
+    us-west-1:
+      linux: ami-0827b6c5b977c020e
+      windows: ami-0aec1cbfa00609468 
+    us-west-2:
+      linux: ami-0395649fbe870727e
+      windows: ami-03ea14ccbeab7b2d5
+    ap-south-1:
+      linux: ami-001843b876406202a
+      windows: ami-05ac570307b6820b7
+    ap-northeast-3:
+      linux: ami-0d8c01579fcb76052
+      windows: ami-0e6b39f9c6aa725c7
+    ap-northeast-2:
+      linux: ami-04c596dcf23eb98d8
+      windows: ami-07427619b8e8c799b
+    ap-northeast-1:
+      linux: ami-0bdd30a3e20da30a1
+      windows: ami-0962657fe505b0123
+    ap-southeast-1:
+      linux: ami-0910e4162f162c238
+      windows: ami-0039c366b582b8bb9
+    ap-southeast-2:
+      linux: ami-04e1ec3aaf06b9060
+      windows: ami-0fa4dfd1533851540
+    ca-central-1:
+      linux: ami-085c5194d6f95060c
+      windows: ami-0f5a06fb334bd0825
+    eu-central-1:
+      linux: ami-0f673487d7e5f89ca
+      windows: ami-0e9ea35223a924666
+    eu-west-1:
+      linux: ami-0f007bf1d5c770c6e 
+      windows: ami-0aa99174e2f8adfb4
+    eu-west-2:
+      linux: ami-019a292cfb114a776
+      windows: ami-0f00a31129b3158a1
+    eu-west-3:
+      linux: ami-0facbf2a36e11b9dd 
+      windows: ami-0a1491ab12bfc93df
+    eu-north-1:
+      linux: ami-01dad638e8f31ab9a
+      windows: ami-043591555d9d80338
+    sa-east-1:
+      linux: ami-0306897d7ae1fd43b
+      windows: ami-0c2acb187401cf1f5
+
+Conditions:
+  createlinux: !Or 
+    - !Equals [!Ref SelectAMI, linux]
+    - !Equals [!Ref SelectAMI, bothami]
+
+  createwindows: !Or 
+    - !Equals [!Ref SelectAMI, windows]
+    - !Equals [!Ref SelectAMI, bothami]
+
+
+Resources:
+
+  VPCstack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: https://global-vpc.s3.amazonaws.com/all-in-one-vpc.yml
+      TimeoutInMinutes: 2 # CloudFormation waits for the nested stack to reach the CREATE_COMPLETE state
+
+  SSHforlinux:
+    Type: AWS::EC2::SecurityGroup
+    Condition: createlinux
+    Properties:
+      GroupDescription: ssh securitygroup
+      VpcId: !GetAtt VPCstack.Outputs.Vpcid
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0                    
+      Tags:
+        - Key: Name
+          Value: ssh-for-linux
+
+  firstec2instance:
+    Type: AWS::EC2::Instance
+    Condition: createlinux
+    Properties:
+      ImageId: !FindInMap 
+        - MachineType
+        - !Ref 'AWS::Region'
+        - linux
+
+      InstanceType: t2.micro
+      KeyName: !Ref newkey
+      SubnetId: !GetAtt VPCstack.Outputs.Subnetid
+      SecurityGroupIds: 
+        - !Ref SSHforlinux
+      Tags:
+        - Key: Name
+          Value: Linux Machine
+      UserData:          
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y          
+          sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          systemctl restart sshd
+          useradd ${Username}
+          echo "${Username}:${Password}" | chpasswd 
+          echo "New user ${Username} created"
+          yum install httpd -y
+          systemctl start httpd
+          systemctl enable httpd
+          touch /var/www/html/index.html
+          echo "hello world from ${Username}\n InstanceType: Linux" > /var/www/html/index.html
+          systemctl restart httpd          
+
+
+  SSHforWindows:
+    Type: AWS::EC2::SecurityGroup
+    Condition: createwindows
+    Properties:
+      GroupDescription: ssh securitygroup
+      VpcId: !GetAtt VPCstack.Outputs.Vpcid
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0                              
+      Tags:
+        - Key: Name
+          Value: ssh-for-windows
+
+  secondec2instance:
+    Type: AWS::EC2::Instance
+    Condition: createwindows
+    Properties:
+      ImageId: !FindInMap 
+        - MachineType
+        - !Ref 'AWS::Region'
+        - windows
+
+      InstanceType: t2.micro
+      KeyName: !Ref newkey
+      SubnetId: !GetAtt VPCstack.Outputs.Subnetid      
+      SecurityGroupIds: 
+        - !Ref SSHforWindows
+      Tags:
+        - Key: Name
+          Value: Windows Machine 
+      UserData:
+        Fn::Base64: !Sub |
+          <powershell>
+          $username = "${Username}"
+          $password = "${Password}"  
+          $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
+          New-LocalUser -Name $username -Password $securePassword -FullName "New User" -Description "Created by CloudFormation template"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+          Enable-WindowsOptionalFeature -Online -FeatureName "IIS-DefaultDocument" -All
+          Add-Content -Path C:\inetpub\wwwroot\index.html "Hello from $username "\n" InstanceType: Windows" 
+          Restart-Service W3SVC
+          </powershell>          
+
+  newkey:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: all-in-one
+      Tags:
+        - Key: Name
+          Value: all-in-one key
+
+Outputs:
+  LinuxInstance:
+    Condition: createlinux
+    Description: 'InstanceIdoflinux'
+    Value: !Ref firstec2instance
+
+  WindowsInstance:
+    Condition: createwindows
+    Description: 'InstanceIdofwindows'
+    Value: !Ref secondec2instance
+
+  ipforlinux:
+    Condition: createlinux
+    Description: 'Ip address of linux'
+    Value: !GetAtt firstec2instance.PublicIp
+
+  ipforwindows:
+    Condition: createwindows
+    Description: 'Ip address of windows'
+    Value: !GetAtt secondec2instance.PublicIp  
+
+  linuxssh:
+    Condition: createlinux
+    Description: 'securitygroup of linux'
+    Value: !Ref SSHforlinux
+
+  windowsSsh:
+    Condition: createwindows
+    Description: 'securitygroup of windows'
+    Value: !Ref SSHforWindows
+
+  keypair:
+    Description: 'keypair created'
+    Value: !Ref newkey    
+
+  StackInfo:
+    Description: 'Information about the nested stack'
+    Value:
+      LastUpdateTime: !GetAtt VPCstack.Outputs.LastUpdateTime
+      CreationTime: !GetAtt VPCstack.Outputs.CreationTime
+      StackStatus: !GetAtt VPCstack.Outputs.StackStatus  

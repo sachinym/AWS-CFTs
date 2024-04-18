@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: |
+  This a cft to provide Password Authentication for Windows ec2 Instance
+
+Parameters:
+  Username:
+    Type: String   
+  Password:
+    Type: String
+
+Resources:
+  firstec2instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-03cd80cfebcbb4481
+      KeyName: public-key-1
+      SecurityGroups:
+        - Ref: SSHSecurityGroup10
+      Tags:
+        - Key: Name
+          Value: windows server 01
+      UserData:
+        !Base64: Fn::Sub: |
+          <powershell>
+          $username = "${Username}"
+          $password = "${Password}"  
+          $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
+          New-LocalUser -Name $username -Password $securePassword -FullName "New User" -Description "Created by CloudFormation template"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+          </powershell>
+
+  SSHSecurityGroup10:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'ssh Securitygroup'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0                 
