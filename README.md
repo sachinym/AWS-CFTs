@@ -10,12 +10,13 @@ AWS cloud formation templates which are practiced by me
 
 ### Editor.md
 
-![](https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png)
-
+<p align="center">
+<img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" alt="image" width="200" height="auto">
+</p>
 
 **Table of Contents**
 
-[TOCM]
+    [TOCM]
 
 # H1 header
 ## H2 header
@@ -23,6 +24,7 @@ AWS cloud formation templates which are practiced by me
 #### H4 header
 ##### H5 header
 ######  H6 header
+
 #Heading 1 link [Heading link](https://github.com/pandao/editor.md "Heading link")
 ##Heading 2 link [Heading link](https://github.com/pandao/editor.md "Heading link")
 ###Heading 3 link [Heading link](https://github.com/pandao/editor.md "Heading link")
@@ -153,8 +155,6 @@ testBox.add("jQuery").remove("jQuery");
 ###Images
 
 > Follow your heart.
-
-> 图为：李健首张专辑《似水流年》封面
                 
 ----
 

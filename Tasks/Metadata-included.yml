@@ -46,8 +46,6 @@ Metadata:
         default: "choose the type of instance you want..."
       Choosekey:
         default: "choose the key for ec2 instance..."
-
-#Conditions:
   
 Resources:
 
